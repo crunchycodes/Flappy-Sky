@@ -40,10 +40,10 @@
             
             <div class="mb-8 p-4 bg-sky-900/60 rounded-xl border-2 border-sky-300/40 backdrop-blur-md text-white flex items-center space-x-4">
                 <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center overflow-hidden p-2 border-2 border-yellow-300">
-                    <img src="https://i.imgur.com/2PMc3kt.png" id="preview-img" alt="Player Character" class="w-full h-full object-contain" crossorigin="anonymous">
+                    <img src="https://i.imgur.com/2PMc3kt.png" id="preview-img" alt="You can only play as" class="w-full h-full object-contain" crossorigin="anonymous">
                 </div>
                 <div class="text-left">
-                    <div class="text-xs uppercase tracking-widest text-sky-200">Why have multiple characters when you can be</div>
+                    <div class="text-xs uppercase tracking-widest text-sky-200">Character Ready</div>
                     <div class="text-sm font-bold text-yellow-300">Skylar</div>
                 </div>
             </div>
@@ -194,14 +194,13 @@
         playerImg.onload = () => { imgLoaded = true; };
         playerImg.onerror = () => { imgLoaded = false; };
 
-        // Custom Background Images Management
+        // Updated Custom Background Images Management
         const bgUrls = [
             'https://i.imgur.com/YdQKogm.jpeg',
             'https://i.imgur.com/H06ZdIG.jpeg',
-            'https://i.imgur.com/qfuO3XY.jpeg',
             'https://i.imgur.com/ZrqCCrc.png',
             'https://i.imgur.com/UgwcwKb.jpeg',
-            'https://i.imgur.com/sFsLg6A.jpeg'
+            'https://i.imgur.com/AaI8yvO.jpeg'
         ];
 
         const bgImages = bgUrls.map(url => {
@@ -267,7 +266,7 @@
             pipeSpeed: width * 0.0055,
             bgSpeed: width * 0.0018, // Speed for scrolling background
             pipeSpawnInterval: 100,
-            pipeGap: height * 0.22, // Tighter gap for added difficulty
+            pipeGap: height * 0.22,
             groundHeight: height * 0.12
         });
 
@@ -282,7 +281,6 @@
             reset() {
                 this.x = width * 0.25;
                 this.y = height * 0.4;
-                // Increased radius from 0.038 to 0.058 for a larger character
                 this.radius = Math.min(width, height) * 0.058;
                 this.velocity = 0;
                 this.rotation = 0;
@@ -419,15 +417,13 @@
             const p = getPhysics();
             const skyHeight = height - p.groundHeight;
 
-            // Vibrant sky gradient
             const skyGradient = ctx.createLinearGradient(0, 0, 0, skyHeight);
-            skyGradient.addColorStop(0, '#0284c7'); // Deep sky blue
-            skyGradient.addColorStop(0.6, '#38bdf8'); // Soft blue
-            skyGradient.addColorStop(1, '#bae6fd'); // Horizon light sky
+            skyGradient.addColorStop(0, '#0284c7');
+            skyGradient.addColorStop(0.6, '#38bdf8');
+            skyGradient.addColorStop(1, '#bae6fd');
             ctx.fillStyle = skyGradient;
             ctx.fillRect(0, 0, width, skyHeight);
 
-            // Sun / Glow in top-right corner
             const sunGlow = ctx.createRadialGradient(width * 0.8, skyHeight * 0.2, 10, width * 0.8, skyHeight * 0.2, 90);
             sunGlow.addColorStop(0, 'rgba(254, 240, 138, 0.8)');
             sunGlow.addColorStop(0.5, 'rgba(253, 224, 71, 0.3)');
@@ -435,7 +431,6 @@
             ctx.fillStyle = sunGlow;
             ctx.fillRect(0, 0, width, skyHeight);
 
-            // Drifting procedural clouds
             ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
             menuClouds.forEach(c => {
                 c.x += (c.speed * 0.001);
@@ -471,25 +466,38 @@
                 initBackgrounds();
             }
 
-            // Calculate continuous image tiling based on scroll offset
             let currentX = -(bgScrollX % width);
             let imgIndex = Math.floor(bgScrollX / width) % bgPlaylist.length;
 
-            // Draw current background and the next adjacent background to make scrolling continuous
+            // Render current and next background image with smooth blend/fade between seams
             for (let i = 0; i < 2; i++) {
                 const renderX = currentX + (i * width);
                 const currentImg = bgPlaylist[(imgIndex + i) % bgPlaylist.length];
 
+                ctx.save();
+
+                // Calculate fade alpha for seamless cross-fading near edges
+                if (i === 1) {
+                    const offsetPercentage = Math.abs(currentX) / width; // 0 to 1 as it scrolls
+                    const fadeWidth = 0.35; // Blend transition threshold (35% width overlap)
+                    let alpha = 1;
+                    if (offsetPercentage < fadeWidth) {
+                        alpha = offsetPercentage / fadeWidth;
+                    }
+                    ctx.globalAlpha = Math.min(1, Math.max(0, alpha));
+                }
+
                 if (currentImg && currentImg.loaded) {
                     ctx.drawImage(currentImg, renderX, 0, width, skyHeight);
                 } else {
-                    // Fallback gradient if image hasn't loaded yet
                     const skyGradient = ctx.createLinearGradient(0, 0, 0, skyHeight);
                     skyGradient.addColorStop(0, '#38bdf8');
                     skyGradient.addColorStop(1, '#bae6fd');
                     ctx.fillStyle = skyGradient;
                     ctx.fillRect(renderX, 0, width, skyHeight);
                 }
+
+                ctx.restore();
             }
         }
 
